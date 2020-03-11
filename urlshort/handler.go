@@ -2,6 +2,8 @@ package urlshort
 
 import (
 	"net/http"
+
+	yaml "gopkg.in/yaml.v2"
 )
 
 // MapHandler will return an http.HandlerFunc (which also
@@ -12,10 +14,10 @@ import (
 // http.Handler will be called instead.
 func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var path = r.URL.Path
-		var redir, ok = pathsToUrls[path]
-		if ok {
-			http.Redirect(w, r, redir, http.StatusMovedPermanently)
+		path := r.URL.Path
+		if redir, ok := pathsToUrls[path]; ok {
+			http.Redirect(w, r, redir, http.StatusFound)
+			return
 		}
 		fallback.ServeHTTP(w, r)
 	}
@@ -35,6 +37,33 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 // The only errors that can be returned all related to having
 // invalid YAML data.
 func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
-	// TODO: Implement this...
-	return nil, nil
+	mp, err := parseYAML(yml)
+	if err != nil {
+		return nil, err
+	}
+
+	return MapHandler(mp, fallback), nil
+}
+
+func parseYAML(yml []byte) (map[string]string, error) {
+	mp := make(map[string]string)
+
+	// Parse
+	var data []pathURL
+	err := yaml.Unmarshal(yml, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	// Move data to map
+	for _, item := range data {
+		mp[item.Path] = item.URL
+	}
+
+	return mp, nil
+}
+
+type pathURL struct {
+	Path string `yaml:"path,omitempty"`
+	URL  string `yaml:"url,omitempty"`
 }
