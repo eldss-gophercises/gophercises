@@ -21,6 +21,7 @@ const exit = 0
 var csv string
 var seconds uint
 var minutes uint
+var shuffle bool
 
 // Setup Flags
 func init() {
@@ -42,13 +43,21 @@ func init() {
 	flag.UintVar(&seconds, "secs", defaultSecs, usageSecs)
 	flag.UintVar(&seconds, "s", defaultSecs, usageSecs+shorthand)
 
-	// timer flag - minutes
+	// Timer flag - minutes
 	const (
 		defaultMins = 0
 		usageMins   = "Length of the test, in minutes."
 	)
 	flag.UintVar(&minutes, "mins", defaultMins, usageMins)
 	flag.UintVar(&minutes, "m", defaultMins, usageMins+shorthand)
+
+	// Shuffle flag
+	const (
+		defaultShuffle = false
+		usageShuffle   = "When provided, quiz questions will be randomly shuffled."
+	)
+	flag.BoolVar(&shuffle, "random", defaultShuffle, usageShuffle)
+	flag.BoolVar(&shuffle, "r", defaultShuffle, usageShuffle+shorthand)
 }
 
 func main() {
@@ -99,6 +108,11 @@ func main() {
 
 // Runs a quiz given the Quiz and a Reader to get user answers
 func runQuiz(q quizlib.Quiz, r io.Reader, c chan int) {
+	// Shuffle questions if needed
+	if shuffle {
+		q.ShuffleQuestions()
+	}
+
 	userIn := bufio.NewScanner(r)
 
 	// let user begin when ready

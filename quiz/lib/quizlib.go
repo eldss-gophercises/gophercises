@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
+	"time"
 )
 
 // Quiz holds information about a single quiz.
@@ -59,6 +61,16 @@ func (q *Quiz) GetQA(qNumber int) (string, string, error) {
 		qNumber, q.NumQuestions())
 	err := errors.New(errStr)
 	return "", "", err
+}
+
+// ShuffleQuestions randomly changes the order of questions in the Quiz
+func (q *Quiz) ShuffleQuestions() {
+	rand.Seed(time.Now().UnixNano())
+	length := q.NumQuestions()
+	for i := 0; i < length; i++ {
+		newI := rand.Intn(length)
+		q.questions[i], q.questions[newI] = q.questions[newI], q.questions[i]
+	}
 }
 
 // NumQuestions gives the length of the quiz
